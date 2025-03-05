@@ -1,88 +1,65 @@
 import streamlit as st
-import torch
-import torch.nn as nn
-import numpy as np
 from PIL import Image
-from torchvision import transforms
-import io
+import numpy as np
+import time
 
-# Define the SRCNN model architecture (this should match the architecture of the saved model)
-class SRCNN(nn.Module):
-    def __init__(self):
-        super(SRCNN, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=9, padding=4)
-        self.relu1 = nn.ReLU()
+# Set page config
+st.set_page_config(page_title="Super-Resolution App", page_icon="✨", layout="wide")
 
-        # Non-linear mapping
-        self.conv2 = nn.Conv2d(in_channels=64, out_channels=32, kernel_size=5, padding=2)
-        self.relu2 = nn.ReLU()
+# Custom CSS for styling
+st.markdown(
+    """
+    <style>
+        .stButton>button {
+            font-size: 18px;
+            padding: 10px 24px;
+            border-radius: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+        .stButton>button:hover {
+            background-color: #45a049;
+        }
+        .uploaded-file { display: none; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-        # Reconstruction
-        self.conv3 = nn.Conv2d(in_channels=32, out_channels=3, kernel_size=5, padding=2)
+# Sidebar menu
+st.sidebar.title("Navigation")
+st.sidebar.markdown("Choose an option:")
+page = st.sidebar.radio("", ["Home", "Upload Image", "Settings"])
 
-    def forward(self, x):
-        x = torch.relu(self.conv1(x))
-        x = torch.relu(self.conv2(x))
-        x = self.conv3(x)
-        return x
+# Title
+st.markdown("<h1 style='text-align: center; color: #4CAF50;'>Super-Resolution Image Enhancer</h1>", unsafe_allow_html=True)
 
-# Load the saved model with caching to avoid reloading it on every interaction
-@st.cache_resource
-def load_model(model_path):
-    model = SRCNN()  # Initialize the model (same architecture as when you saved it)
-    model.load_state_dict(torch.load(model_path))
-    model.eval()  # Set the model to evaluation mode
-    return model
+# Home Page
+if page == "Home":
+    st.write("Welcome to the Image Super-Resolution App! 🎨 Upload an image, and our AI model will enhance its resolution.")
 
-# Function to process the input image and perform super-resolution
-def process_image(image, model):
-    # Preprocess image: Convert to tensor and normalize
-    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-    input_tensor = transform(image).unsqueeze(0)  # Add batch dimension
-    
-    # Move tensor to the same device as model (GPU or CPU)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    input_tensor = input_tensor.to(device)
-    model.to(device)
-    
-    with torch.no_grad():  # No need to calculate gradients during inference
-        output_tensor = model(input_tensor)
-    
-    # Convert tensor to image
-    output_image = output_tensor.squeeze(0).permute(1, 2, 0).cpu().numpy()  # Remove batch dimension and change order
-    output_image = (output_image * 255).clip(0, 255).astype(np.uint8)  # Convert to valid image range
+# Upload Image Page
+elif page == "Upload Image":
+    st.subheader("Upload Your Low-Resolution Image")
+    uploaded_file = st.file_uploader("", type=["png", "jpg", "jpeg"])
 
-    return Image.fromarray(output_image)
+    if uploaded_file is not None:
+        image = Image.open(uploaded_file)
+        col1, col2 = st.columns(2)
 
-# Function to convert image to bytes for downloading
-def pil_image_to_bytes(image):
-    buf = io.BytesIO()
-    image.save(buf, format="PNG")
-    return buf.getvalue()
+        with col1:
+            st.image(image, caption="🖼️ Original Image", use_column_width=True)
 
-# Streamlit app
-def main():
-    st.title("Image Super-Resolution")
-    
-    # Load model once at the beginning (caching ensures it's only loaded once)
-    model = load_model("srcnn_model.pth")  # Replace with the correct model path
-    
-    # Upload an image
-    uploaded_image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
-    if uploaded_image is not None:
-        # Open the image
-        image = Image.open(uploaded_image)
-        st.image(image, caption="Uploaded Image", use_column_width=True)
-        
-        # Process image with model
-        processed_image = process_image(image, model)
-        
-        # Show processed image
-        st.image(processed_image, caption="Super-Resolution Image", use_column_width=True)
-        
-        # Option to download the processed image
-        processed_image_bytes = pil_image_to_bytes(processed_image)
-        st.download_button("Download Processed Image", data=processed_image_bytes, file_name="super_resolved_image.png")
+        with col2:
+            st.write("🔄 **Enhancing Image...** (Model not yet integrated)")
+            time.sleep(2)  # Simulate processing time
+            st.image(image, caption="✨ Enhanced Image (Coming Soon)", use_column_width=True)
 
-if __name__ == "__main__":
-    main()
+        st.success("Processing complete! Model integration coming soon.")
+        st.download_button("📥 Download Enhanced Image", uploaded_file, file_name="enhanced.png")
+
+# Settings Page (Future)
+elif page == "Set tings":
+    st.write("⚙️ Settings will be available soon!")
+
