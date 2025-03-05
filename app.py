@@ -1,7 +1,8 @@
 import streamlit as st
 from PIL import Image
-import numpy as np
 import time
+import io
+from model import preprocess_image, super_resolve
 
 # Set page config
 st.set_page_config(page_title="Super-Resolution App", page_icon="✨", layout="wide")
@@ -33,7 +34,7 @@ st.sidebar.markdown("Choose an option:")
 page = st.sidebar.radio("", ["Home", "Upload Image", "Settings"])
 
 # Title
-st.markdown("<h1 style='text-align: center; color: #4CAF50;'>🔍 Super-Resolution Image Enhancer</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #4CAF50;'>Super-Resolution Image Enhancer</h1>", unsafe_allow_html=True)
 
 # Home Page
 if page == "Home":
@@ -52,14 +53,25 @@ elif page == "Upload Image":
             st.image(image, caption="🖼️ Original Image", use_column_width=True)
 
         with col2:
-            st.write("🔄 **Enhancing Image...** (Model not yet integrated)")
+            st.write("🔄 **Enhancing Image...**")
             time.sleep(2)  # Simulate processing time
-            st.image(image, caption="✨ Enhanced Image (Coming Soon)", use_column_width=True)
 
-        st.success("Processing complete! Model integration coming soon.")
-        st.download_button("📥 Download Enhanced Image", uploaded_file, file_name="enhanced.png")
+            # Preprocess and perform super-resolution on the image
+            low_res_image, low_res_tensor = preprocess_image(image)
+            high_res_image = super_resolve(low_res_tensor)
+
+            # Display the enhanced image
+            st.image(high_res_image, caption="✨ Enhanced Image", use_column_width=True)
+
+            # Save the enhanced image to a buffer so it can be downloaded
+            img_pil = Image.fromarray(high_res_image)
+            buf = io.BytesIO()
+            img_pil.save(buf, format="PNG")
+            buf.seek(0)
+
+        st.success("Processing complete!")
+        st.download_button("📥 Download Enhanced Image", buf, file_name="enhanced.png", mime="image/png")
 
 # Settings Page (Future)
 elif page == "Settings":
     st.write("⚙️ Settings will be available soon!")
-
