@@ -7,7 +7,7 @@ import streamlit as st
 import time
 
 # Load pre-trained SRCNN from PyTorch Hub
-model = torch.hub.load('https://github.com/krasserm/super-resolution', 'srcnn', pretrained=True)
+model = torch.hub.load('https://github.com/krasserm/super-resolution', 'srgan', pretrained=True)
 model.eval()  # Set the model to evaluation mode
 
 def preprocess_image(image):
