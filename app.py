@@ -64,6 +64,3 @@ def main():
         # Option to download the processed image
         processed_image_bytes = processed_image.tobytes()
         st.download_button("Download Processed Image", data=processed_image_bytes, file_name="super_resolved_image.png")
-
-if __name__ == "__main__":
-    main()
