@@ -5,3 +5,6 @@ pillow
 opencv-python
 numpy
 scipy
+streamlit
+opencv-python-headless
+Pillow
