@@ -17,13 +17,15 @@ st.markdown("""
         background:#4CAF50;
         color:#FFF;
     }
-    .stButton>button:hover { background:#45a049; }
+    .stButton>button:hover {
+        background:#45a049;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-# 2) Model loader (cached)
+# 2) Load model (cached)
 @st.cache(allow_output_mutation=True)
 def load_model(path: str):
     import torch.nn as nn
@@ -44,6 +46,7 @@ def load_model(path: str):
     class Generator(nn.Module):
         def __init__(self, num_residual_blocks=16, upscale_factor=4):
             super().__init__()
+            # Initial conv
             self.initial = nn.Sequential(
                 nn.Conv2d(3, 64, 9, padding=4),
                 nn.ReLU(inplace=True)
@@ -51,12 +54,12 @@ def load_model(path: str):
             # Residual blocks
             layers = [ResidualBlock(64) for _ in range(num_residual_blocks)]
             self.res_blocks = nn.Sequential(*layers)
-            # Mid-layer
+            # Mid convolution
             self.mid_conv = nn.Sequential(
                 nn.Conv2d(64, 64, 3, padding=1),
                 nn.BatchNorm2d(64)
             )
-            # Upsampling
+            # Upsampling with PixelShuffle
             up_layers = []
             for _ in range(upscale_factor // 2):
                 up_layers += [
@@ -65,7 +68,7 @@ def load_model(path: str):
                     nn.ReLU(inplace=True)
                 ]
             self.upsample = nn.Sequential(*up_layers)
-            # Final conv
+            # Final output conv
             self.final = nn.Conv2d(64, 3, 9, padding=4)
 
         def forward(self, x):
@@ -82,44 +85,46 @@ def load_model(path: str):
     model.eval()
     return model
 
-# **UPDATE THIS** to your actual Kaggle Models path
-MODEL_PATH = "generator_best.pth"
+# **UPDATE** this path to your actual Kaggle Model mount
+MODEL_PATH = "/kaggle/models/your-username/srgan-27/default/V1/generator_final.pth"
 G = load_model(MODEL_PATH)
 
-# 3) Sidebar
+# 3) Sidebar navigation
 st.sidebar.title("Menu")
 page = st.sidebar.radio("", ["Home", "Enhance", "Settings"])
 
-# 4) Home
+# 4) Home page
 if page == "Home":
     st.title("🖼️ SRGAN Super-Resolution")
-    st.write("Upload a low-res image and see it magically upscaled!")
+    st.write("Upload a low-resolution image and see it upscaled 4× by our SRGAN model!")
 
-# 5) Enhance
+# 5) Enhance page
 elif page == "Enhance":
     st.subheader("Upload Your Low-Res Image")
-    uploaded = st.file_uploader("", type=["png","jpg","jpeg"])
-    if uploaded:
+    uploaded = st.file_uploader("", type=["png", "jpg", "jpeg"])
+    if uploaded is not None:
         img = Image.open(uploaded).convert("RGB")
         st.image(img, caption="Low-Res Input", use_column_width=True)
 
-        # Pad to multiple of 4
-        w,h = img.size
-        nw, nh = ((w+3)//4)*4, ((h+3)//4)*4
-        canvas = Image.new("RGB", (nw,nh))
-        canvas.paste(img, (0,0))
+        # Pad to a multiple of 4
+        w, h = img.size
+        nw, nh = ((w + 3) // 4) * 4, ((h + 3) // 4) * 4
+        canvas = Image.new("RGB", (nw, nh))
+        canvas.paste(img, (0, 0))
         inp = transforms.ToTensor()(canvas).unsqueeze(0).to(DEVICE)
 
         with st.spinner("Enhancing image…"):
             start = time.time()
             with torch.no_grad():
-                out = G(inp).clamp(0,1)
+                out = G(inp).clamp(0, 1)
             elapsed = time.time() - start
 
-        # Un-pad and convert
-        sr = out[0,:,:h,:w].cpu()
-        sr_img = transforms.ToPILImage()(sr)
+        # **Correct slicing**: grab full 4× output for original image size
+        upscale = 4
+        sr_tensor = out[0, : h * upscale, : w * upscale].cpu()
+        sr_img = transforms.ToPILImage()(sr_tensor)
 
+        # Display side by side
         col1, col2 = st.columns(2)
         col1.image(img, caption="Original LR", use_column_width=True)
         col2.image(sr_img, caption=f"SRGAN Output (took {elapsed:.1f}s)", use_column_width=True)
@@ -127,12 +132,16 @@ elif page == "Enhance":
         # Download button
         buf = io.BytesIO()
         sr_img.save(buf, format="PNG")
-        st.download_button("📥 Download SR Image", buf.getvalue(), file_name="srgan_output.png",
-                           mime="image/png")
+        st.download_button(
+            "📥 Download Enhanced Image",
+            data=buf.getvalue(),
+            file_name="srgan_output.png",
+            mime="image/png"
+        )
 
-# 6) Settings
+# 6) Settings page
 elif page == "Settings":
     st.subheader("⚙️ Settings")
-    scale = st.slider("Upscale factor", min_value=2, max_value=8, value=4)
+    scale = st.slider("Upscale Factor", min_value=2, max_value=8, value=4)
     st.write("Model path:", MODEL_PATH)
-    st.write("Running on:", DEVICE)
+    st.write("Running on device:", DEVICE)
