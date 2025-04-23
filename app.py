@@ -83,7 +83,7 @@ def load_model(path: str):
     return model
 
 # **UPDATE THIS** to your actual Kaggle Models path
-MODEL_PATH = "generator_final.pth"
+MODEL_PATH = "generator_best.pth"
 G = load_model(MODEL_PATH)
 
 # 3) Sidebar
