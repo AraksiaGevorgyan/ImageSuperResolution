@@ -86,7 +86,7 @@ def load_model(path: str):
     return model
 
 # **UPDATE** this path to your actual Kaggle Model mount
-MODEL_PATH = "/kaggle/models/your-username/srgan-27/default/V1/generator_final.pth"
+MODEL_PATH = "generator_best.pth"
 G = load_model(MODEL_PATH)
 
 # 3) Sidebar navigation
