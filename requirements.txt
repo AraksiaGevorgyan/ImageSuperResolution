@@ -8,3 +8,4 @@ scipy
 streamlit
 opencv-python-headless
 Pillow
+scikit-image
