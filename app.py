@@ -147,6 +147,8 @@
 import os
 # Disable the complex module watcher before importing streamlit
 os.environ["STREAMLIT_WATCHER_SIMPLE"] = "true"
+os.environ["STREAMLIT_WATCHER_TYPE"] = "none"
+
 
 import streamlit as st
 
