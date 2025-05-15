@@ -13,13 +13,13 @@ if download_fmt == "JPEG":
     jpeg_quality = st.slider("JPEG quality", min_value=10, max_value=100, value=90)
     st.write(f"JPEG quality set to **{jpeg_quality}**")
 
-st.markdown("---")
+# st.markdown("---")
 
-# 2) Inference device toggle
-st.markdown("**Inference device**")
-use_gpu = st.checkbox("Enable GPU acceleration", value=torch.cuda.is_available())
-device = "cuda" if (use_gpu and torch.cuda.is_available()) else "cpu"
-st.write(f"Running on: **{device}**")
+# # 2) Inference device toggle
+# st.markdown("**Inference device**")
+# use_gpu = st.checkbox("Enable GPU acceleration", value=torch.cuda.is_available())
+device = "cpu"
+# st.write(f"Running on: **{device}**")
 
 # Persist into session state for other pages to read
 st.session_state["DOWNLOAD_FORMAT"] = download_fmt
