@@ -43,7 +43,7 @@ if "lr_files" in st.session_state and st.session_state.lr_files:
         st.markdown(f"### Image {idx+1}")
         # Load LR
         lr_img = Image.open(lr_file).convert("RGB")
-        st.image(lr_img, caption="Low-Res Input", use_column_width=True)
+        st.image(lr_img, caption="Low-Res Input", use_container_width=True)
 
         # Preprocess
         # 1) Read the device toggle from Settings
@@ -68,8 +68,8 @@ if "lr_files" in st.session_state and st.session_state.lr_files:
 
         # Display
         c1, c2 = st.columns(2)
-        c1.image(lr_img, caption="LR Input", use_column_width=True)
-        c2.image(sr_img, caption=f"SR Output (×4) — {elapsed:.2f}s", use_column_width=True)
+        c1.image(lr_img, caption="LR Input", use_container_width=True)
+        c2.image(sr_img, caption=f"SR Output (×4) — {elapsed:.2f}s", use_container_width=True)
 
                 # PSNR if HR provided
         if hr_files and len(hr_files) == len(lr_files):
